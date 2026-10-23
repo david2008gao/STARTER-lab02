@@ -41,6 +41,7 @@ bool IntBST::insert(int value, Node *n) {
         if (!n->right){
             Node* newNode = new Node(value);
             n->right = newNode;
+            newNode -> parent = n;
         }
         else{
             return insert(value, n->right);
@@ -50,6 +51,7 @@ bool IntBST::insert(int value, Node *n) {
         if (!n->left){
             Node* newNode = new Node(value);
             n->left = newNode;
+            newNode -> parent = n;
         }
         else{
             return insert(value, n->left);
@@ -61,7 +63,6 @@ bool IntBST::insert(int value, Node *n) {
 
 // print tree data pre-order
 void IntBST::printPreOrder() const {
-    cout << "pre-order:";
     printPreOrder(root);
     //cout << "IMPLEMENT printPreOrder public method";; // IMPLEMENT HERE
 }
@@ -69,7 +70,7 @@ void IntBST::printPreOrder() const {
 // recursive helper for printPreOrder()
 void IntBST::printPreOrder(Node *n) const {
     if (n){
-        cout << " " << n->info;
+        cout << n->info << " ";
         printPreOrder(n->left);
         printPreOrder(n->right);
     }
@@ -78,31 +79,29 @@ void IntBST::printPreOrder(Node *n) const {
 
 // print tree data in-order, with helper
 void IntBST::printInOrder() const {
-    cout << "in-order:";
     printInOrder(root);
     //cout << "IMPLEMENT printInOrder public method"; // IMPLEMENT HERE
 }
 void IntBST::printInOrder(Node *n) const {
     if (n){
-        printPreOrder(n->left);
-        cout << " " << n->info;
-        printPreOrder(n->right);
+        printInOrder(n->left);
+        cout << n->info << " ";
+        printInOrder(n->right);
     }
     //cout << "IMPLEMENT IMPLEMENT printInOrder private helper method"; // IMPLEMENT HERE
 }
 
 // prints tree data post-order, with helper
 void IntBST::printPostOrder() const {
-    cout << "post-order:";
     printPostOrder(root);
     //cout << "IMPLEMENT printPostOrder public method"; // IMPLEMENT HERE
 }
 
 void IntBST::printPostOrder(Node *n) const {
     if (n){
-        printPreOrder(n->left);
-        printPreOrder(n->right);
-        cout << " " << n->info;
+        printPostOrder(n->left);
+        printPostOrder(n->right);
+        cout << n->info << " ";
     }
     //cout << "IMPLEMENT printPostOrder private helper method";// IMPLEMENT HERE
 }
@@ -153,20 +152,23 @@ bool IntBST::contains(int value) const {
 
 // returns the Node containing the predecessor of the given value
 IntBST::Node* IntBST::getPredecessorNode(int value) const{
-    if(!root) return NULL;
-    if(root->info == value) return NULL;
-    Node* curr = root;
-    while(curr){
-        if((curr->left && curr->left->info == value) || (curr->right && curr -> right -> info == value)) return curr;
-        if(curr->info < value){
-            curr = curr->right;
+    Node* curr = getNodeFor(value, root);
+    if (!curr) return NULL;
+    if (curr->left){
+        curr = curr->left;
+        while (curr->right){
+            curr = curr -> right;
         }
-        else{
-            curr = curr->left;
-        }
+        return curr;
     }
-    return NULL;
-    //return NULL; // REPLACE THIS NON-SOLUTION
+    curr = getNodeFor(value, root);
+    Node* prev = curr->parent;
+    while(prev){
+        if (prev->right == curr) return prev;
+        curr = prev;
+        prev = prev->parent;
+    }
+    return NULL; // REPLACE THIS NON-SOLUTION
 }
 
 // returns the predecessor value of the given value or 0 if there is none
@@ -188,12 +190,12 @@ IntBST::Node* IntBST::getSuccessorNode(int value) const{
         }
         return curr;
     }
-    Node* prev = getPredecessorNode(value);
     curr = getNodeFor(value, root);
+    Node* prev = curr->parent;
     while(prev){
         if (prev->left == curr) return prev;
         curr = prev;
-        prev = getPredecessorNode(prev->info);
+        prev = prev->parent;
     }
     return NULL; // REPLACE THIS NON-SOLUTION
 }
@@ -209,9 +211,29 @@ int IntBST::getSuccessor(int value) const{
 // deletes the Node containing the given value from the tree
 // returns true if the node exist and was deleted or false if the node does not exist
 bool IntBST::remove(int value){
-    Node* prev = getPredecessorNode(value);
     Node* curr = getNodeFor(value, root);
     if (!curr) return false;
+    if (curr == root){
+        Node* leftNode = curr->left;
+        Node* rightNode = curr->right;
+        delete curr;
+        if (!leftNode){
+            root = rightNode;
+            rightNode -> parent = NULL;
+            return true;
+        }
+        root = leftNode;
+        leftNode -> parent = NULL;
+        if (rightNode){
+            while(leftNode->right){
+                leftNode = leftNode->right;
+            }
+            leftNode->right = rightNode;
+            rightNode->parent = leftNode;
+        }
+        return true;
+    }
+    Node* prev = curr->parent;
     if (prev && prev->left && prev->left == curr){
         if (curr -> left && curr -> right){
             Node* rightNode = curr->right;
@@ -219,24 +241,31 @@ bool IntBST::remove(int value){
             curr = curr->left;
             delete temp;
             prev->left = curr;
+            curr->parent = prev;
             while (curr -> right){
                 curr = curr -> right;
             }
             curr -> right = rightNode;
+            rightNode -> parent = curr;
             return true;
         }
         if (curr -> left){
             Node* temp = curr->left;
             prev->left = temp;
+            temp->parent = prev;
             delete curr;
             return true;
         }
         if (curr -> right){
             Node* temp = curr->right;
             prev->left = temp;
+            temp->parent = prev;
             delete curr;
             return true;
         }
+        prev->left = NULL;
+        delete curr;
+        return true;
     }
     if (prev && prev->right && prev->right == curr){
         if (curr -> left && curr -> right){
@@ -245,24 +274,31 @@ bool IntBST::remove(int value){
             curr = curr->left;
             delete temp;
             prev->right = curr;
+            curr->parent = prev;
             while (curr -> right){
                 curr = curr -> right;
             }
             curr -> right = rightNode;
+            rightNode -> parent = curr;
             return true;
         }
         if (curr -> left){
             Node* temp = curr->left;
             prev->right = temp;
+            temp->parent = prev;
             delete curr;
             return true;
         }
         if (curr -> right){
             Node* temp = curr->right;
             prev->right = temp;
+            temp->parent = prev;
             delete curr;
             return true;
         }
+        prev -> right = NULL;
+        delete curr;
+        return true;
     }
     return false; // REPLACE THIS NON-SOLUTION
 }
