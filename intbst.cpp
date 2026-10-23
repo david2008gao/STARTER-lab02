@@ -219,7 +219,7 @@ bool IntBST::remove(int value){
         delete curr;
         if (!leftNode){
             root = rightNode;
-            rightNode -> parent = NULL;
+            if (rightNode) rightNode -> parent = NULL;
             return true;
         }
         root = leftNode;
