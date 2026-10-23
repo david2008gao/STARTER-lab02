@@ -14,19 +14,23 @@ IntBST::IntBST() {
 
 // destructor deletes all nodes
 IntBST::~IntBST() {
-
+    if (root) clear(root);
 }
 
 // recursive helper for destructor
 void IntBST::clear(Node *n) {
-    clear(n->left);
-    clear(n->right);
+    if (n->left) clear(n->left);
+    if (n->right) clear(n->right);
     delete n;
 }
 
 // insert value in tree; return false if duplicate
 bool IntBST::insert(int value) {
-    if (!root) root = value;
+    if (!root){
+        Node* newNode = new Node(value);
+        root = newNode;
+        return true;
+    }
     return insert(value, root); // REPLACE THIS NON-SOLUTION
 }
 
@@ -35,8 +39,7 @@ bool IntBST::insert(int value, Node *n) {
     if (value == n->info) return false;
     if (value > n->info){
         if (!n->right){
-            Node* newNode;
-            newNode->info = value;
+            Node* newNode = new Node(value);
             n->right = newNode;
         }
         else{
@@ -45,8 +48,7 @@ bool IntBST::insert(int value, Node *n) {
     }
     if (value < n->info){
         if (!n->left){
-            Node* newNode;
-            newNode->info = value;
+            Node* newNode = new Node(value);
             n->left = newNode;
         }
         else{
@@ -59,18 +61,18 @@ bool IntBST::insert(int value, Node *n) {
 
 // print tree data pre-order
 void IntBST::printPreOrder() const {
-    cout << "pre-order:"
+    cout << "pre-order:";
     printPreOrder(root);
     //cout << "IMPLEMENT printPreOrder public method";; // IMPLEMENT HERE
 }
 
 // recursive helper for printPreOrder()
 void IntBST::printPreOrder(Node *n) const {
-    if (!n) return nullptr;
-    cout << " " << n->info;
-    printPreOrder(n->left);
-    printPreOrder(n->right);
-
+    if (n){
+        cout << " " << n->info;
+        printPreOrder(n->left);
+        printPreOrder(n->right);
+    }
     //cout << "IMPLEMENT printPreOrder private helper method"; // IMPLEMENT HERE
 }
 
@@ -81,10 +83,11 @@ void IntBST::printInOrder() const {
     //cout << "IMPLEMENT printInOrder public method"; // IMPLEMENT HERE
 }
 void IntBST::printInOrder(Node *n) const {
-    if (!n) return nullptr;
-    printPreOrder(n->left);
-    cout << " " << n->info;
-    printPreOrder(n->right);
+    if (n){
+        printPreOrder(n->left);
+        cout << " " << n->info;
+        printPreOrder(n->right);
+    }
     //cout << "IMPLEMENT IMPLEMENT printInOrder private helper method"; // IMPLEMENT HERE
 }
 
@@ -96,10 +99,11 @@ void IntBST::printPostOrder() const {
 }
 
 void IntBST::printPostOrder(Node *n) const {
-    if (!n) return nullptr;
-    printPreOrder(n->left);
-    printPreOrder(n->right);
-    cout << " " << n->info;
+    if (n){
+        printPreOrder(n->left);
+        printPreOrder(n->right);
+        cout << " " << n->info;
+    }
     //cout << "IMPLEMENT printPostOrder private helper method";// IMPLEMENT HERE
 }
 
@@ -153,8 +157,8 @@ IntBST::Node* IntBST::getPredecessorNode(int value) const{
     if(root->info == value) return NULL;
     Node* curr = root;
     while(curr){
-        if(curr->left->info == value || curr -> right -> info == value) return curr;
-        if(curr->info > value){
+        if((curr->left && curr->left->info == value) || (curr->right && curr -> right -> info == value)) return curr;
+        if(curr->info < value){
             curr = curr->right;
         }
         else{
@@ -175,7 +179,7 @@ int IntBST::getPredecessor(int value) const{
 
 // returns the Node containing the successor of the given value
 IntBST::Node* IntBST::getSuccessorNode(int value) const{
-    Node* curr = getNodeFor(value);
+    Node* curr = getNodeFor(value, root);
     if (!curr) return NULL;
     if (curr->right){
         curr = curr->right;
@@ -185,7 +189,7 @@ IntBST::Node* IntBST::getSuccessorNode(int value) const{
         return curr;
     }
     Node* prev = getPredecessorNode(value);
-    curr = getNodeFor(value);
+    curr = getNodeFor(value, root);
     while(prev){
         if (prev->left == curr) return prev;
         curr = prev;
@@ -206,9 +210,9 @@ int IntBST::getSuccessor(int value) const{
 // returns true if the node exist and was deleted or false if the node does not exist
 bool IntBST::remove(int value){
     Node* prev = getPredecessorNode(value);
-    Node* curr = getNodeFor(value);
+    Node* curr = getNodeFor(value, root);
     if (!curr) return false;
-    if (prev->left && prev->left == curr){
+    if (prev && prev->left && prev->left == curr){
         if (curr -> left && curr -> right){
             Node* rightNode = curr->right;
             Node* temp = curr;
@@ -234,7 +238,7 @@ bool IntBST::remove(int value){
             return true;
         }
     }
-    if (prev->right && prev->right == curr){
+    if (prev && prev->right && prev->right == curr){
         if (curr -> left && curr -> right){
             Node* rightNode = curr->right;
             Node* temp = curr;
